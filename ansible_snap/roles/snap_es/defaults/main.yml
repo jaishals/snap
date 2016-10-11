@@ -28,9 +28,9 @@ elasticsearch_network_host: localhost
 elasticsearch_http_port: 9200
 elasticsearch_heap_size: 4g
 
-elasticsearch_index_data: "{{ local_home }}/snap/es_data"
-elasticsearch_logs: "{{ local_home }}/snap/es_logs"
-elasticsearch_tmp_files: "{{ local_home }}/snap/es_tmp"
+elasticsearch_index_data: "{{ local_home }}/snap_data/es_data"
+elasticsearch_logs: "/var/log/snap_es_logs"
+elasticsearch_tmp_files: "/tmp/snap_es_tmp"
 #elasticsearch_http_cors_enabled: "false"
 elasticsearch_service_state: started
 
@@ -53,7 +53,7 @@ kibana_host: localhost
 kibana_port: "5601"
 kibana_elasticsearch: "http://localhost:9200"
 kibana_index: ".kibana"
-kibana_log: "{{ local_home }}/snap/kibana_log"
+kibana_log: "/var/log/snap_kibana_log"
 kibana_log_rotate_count: 5
 kibana_log_rotate_interval: daily
 kibana_nice_level: "0"
