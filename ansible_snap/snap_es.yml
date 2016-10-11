@@ -1,0 +1,7 @@
+---
+# Playbook to install ELK stack on a localhost
+- name: ELK stack 
+  hosts: localhost
+  roles:
+    - snap_es
+ 
