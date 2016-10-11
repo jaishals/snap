@@ -1,0 +1,24 @@
+---
+
+- name: Install common apt packages
+  apt: pkg={{ item }} state=latest
+  with_items: elk_common_packages
+  sudo: yes
+
+- name: Install Java
+  include: java.yml
+
+- name: ES apt GPG key
+  apt_key:
+    url='http://packages.elasticsearch.org/GPG-KEY-elasticsearch'
+  sudo: yes
+
+- name: Install Elasticsearch
+  include: elasticsearch.yml
+
+- name: Install Nginx
+  include: nginx.yml
+
+- name: Install Kibana
+  include: kibana.yml
+

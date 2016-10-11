@@ -1,0 +1,70 @@
+---
+#local home dir
+local_home: "{{ lookup('env','HOME') }}"
+hostname: "nokiasnap"
+
+#elastic search setup stuff  
+elasticsearch_user: elasticsearch
+elasticsearch_group: elasticsearch
+elasticsearch_download_url: https://download.elasticsearch.org/elasticsearch/elasticsearch
+elasticsearch_version: 2.4.1
+elasticsearch_apt_repos:
+  - 'ppa:webupd8team/java'
+elasticsearch_apt_java_package: oracle-java7-installer
+elasticsearch_apt_dependencies:
+  - htop
+  - ntp
+  - unzip
+elasticsearch_max_open_files: 65535
+elasticsearch_home_dir: /usr/share/elasticsearch
+elasticsearch_plugin_dir: /usr/share/elasticsearch/plugins
+elasticsearch_conf_dir: /etc/elasticsearch
+elasticsearch_pid_dir: /var/run
+elasticsearch_service_startonboot: no
+elasticsearch_timezone: "Etc/UTC"  # Default to UTC
+
+#elastic search config stuff
+elasticsearch_network_host: localhost
+elasticsearch_http_port: 9200
+elasticsearch_heap_size: 4g
+
+elasticsearch_index_data: "{{ local_home }}/snap/es_data"
+elasticsearch_logs: "{{ local_home }}/snap/es_logs"
+elasticsearch_tmp_files: "{{ local_home }}/snap/es_tmp"
+#elasticsearch_http_cors_enabled: "false"
+elasticsearch_service_state: started
+
+
+
+
+
+
+# Non-Elasticsearch Defaults
+apt_cache_valid_time: 300 # seconds between "apt-get update" calls.
+elasticsearch_install_java: "true"
+
+# kibana config info
+kibana_user: kibana
+kibana_group: kibana
+kibana_download_url: https://download.elastic.co/kibana/kibana
+kibana_version: 4.6.1
+kibana_dir: "/opt"
+kibana_host: localhost
+kibana_port: "5601"
+kibana_elasticsearch: "http://localhost:9200"
+kibana_index: ".kibana"
+kibana_log: "{{ local_home }}/snap/kibana_log"
+kibana_log_rotate_count: 5
+kibana_log_rotate_interval: daily
+kibana_nice_level: "0"
+kibana_plugins: []
+kibana_config: {}
+kibana_username: "admin"
+kibana_pass: "admin"
+
+#nginx config
+nginx_user: kibana
+nginx_port: 80
+nginx_worker_connections: 10
+nginx_keepalive_timeout: 65
+nginx_error_log: "{{ local_home }}/snap/nginx_error.log"

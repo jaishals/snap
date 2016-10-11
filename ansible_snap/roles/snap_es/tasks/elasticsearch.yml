@@ -1,0 +1,94 @@
+---
+- name: elastic-install | Configuring elastic group
+  group:
+    name={{ elasticsearch_group }}
+
+- name: elastic-install | Configuring elastic user
+  user:
+    name={{ elasticsearch_user }}
+    group={{ elasticsearch_group }}
+    createhome=no
+
+- name: elastic-install | Ensure temp elasticsearch directories exists
+  file:
+    path="{{ elasticsearch_index_data }}"
+    state=directory
+    owner={{ elasticsearch_user }}
+    group={{ elasticsearch_group }}
+    recurse=yes
+
+- name: elastic-install | Check if we have elastic with same version installed
+  stat:
+    path="/usr/share/elasticsearch/lib/elasticsearch-{{ elasticsearch_version }}.jar"
+  register: installed_version
+
+- name: elastic-install | Try to stop elasticsearch if running
+  service:
+    name=elasticsearch
+    state=stopped
+  ignore_errors: yes
+  when: not installed_version.stat.exists
+
+- name: elastic-install | Download Elasticsearch deb
+  get_url:
+    url={{ elasticsearch_download_url }}/elasticsearch-{{ elasticsearch_version }}.deb
+    dest=/tmp/elasticsearch-{{ elasticsearch_version }}.deb
+    mode=0440
+  when: not installed_version.stat.exists
+
+#shell: dpkg --remove elasticsearch
+- name: elastic-install | Uninstalling previous version if applicable
+  apt:
+     name="elasticsearch"
+     state="absent"
+  when: not installed_version.stat.exists
+
+- name: elastic-install | Remove elasticsearch directory
+  file:
+    path="{{ elasticsearch_home_dir }}"
+    state=absent
+  when: not installed_version.stat.exists
+
+- name: elastic-install | Install Elasticsearch deb
+  shell: dpkg -i -E --force-confnew /tmp/elasticsearch-{{ elasticsearch_version }}.deb
+  when: not installed_version.stat.exists
+  notify: Restart Elasticsearch
+
+- name: elastic-install | Ensure elastic directories exists
+  file:
+    path="{{ item }}"
+    state=directory
+    owner={{ elasticsearch_user }}
+    group={{ elasticsearch_group }}
+    recurse=yes
+  with_items:
+     - "{{ elasticsearch_index_data }}"
+     - "{{ elasticsearch_logs }}"
+     - "{{ elasticsearch_tmp_files }}"
+     - "{{ elasticsearch_home_dir }}"
+     - "{{ elasticsearch_conf_dir }}"
+
+- name: elastic-install | Configuring Elasticsearch elasticsearch.yml Node
+  template:
+    src=elasticsearch.yml.j2
+    dest={{ elasticsearch_conf_dir }}/elasticsearch.yml
+    owner={{ elasticsearch_user }}
+    group={{ elasticsearch_group }}
+    mode=0644
+  when: elasticsearch_conf_dir is defined
+  notify: Restart elasticsearch
+
+- name : elastic-install | Configure /etc/default/elasticsearch
+  template:
+    src=elasticsearch.default.j2
+    dest=/etc/default/elasticsearch
+    owner={{ elasticsearch_user }}
+    group={{ elasticsearch_group }}
+    mode=0644
+  notify: Restart elasticsearch
+  
+- name: Start Elasticsearch.
+  service: name=elasticsearch state={{ elasticsearch_service_state }} enabled=yes
+
+- name: Make sure Elasticsearch is running before proceeding.
+  wait_for: port={{ elasticsearch_http_port }} delay=3 timeout=300
