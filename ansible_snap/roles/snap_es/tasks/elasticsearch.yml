@@ -86,7 +86,23 @@
     group={{ elasticsearch_group }}
     mode=0644
   notify: Restart elasticsearch
+
+- name: plugins | Removing Old Plugins
+  shell: bin/plugin --remove {{ item.name }}
+    chdir={{ elasticsearch_home_dir }}
+  when: item.name is defined and item.reinstall is defined and item.reinstall == True
+  with_items: elasticsearch_plugins
+  ignore_errors: yes
   
+- name: elastic-install | Installing Plugins
+  shell: bin/plugin install {{ item.name }} {{ '-url ' + item.url if item.url is defined else '' }}
+    chdir={{ elasticsearch_home_dir }}
+  when: item.download_only is not defined
+  with_items: elasticsearch_plugins
+  register: plugins_installed
+  changed_when: "'Installed' in plugins_installed.stdout"
+  failed_when: "plugins_installed.rc != 0 and plugins_installed.stdout.find('already exists. To update the plugin') == -1" 
+
 - name: Start Elasticsearch.
   service: name=elasticsearch state={{ elasticsearch_service_state }} enabled=yes
 

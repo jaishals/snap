@@ -151,7 +151,7 @@ path.logs: {{ elasticsearch_logs }}
 #
 # Set this property to true to lock the memory:
 #
-bootstrap.mlockall: true
+bootstrap.mlockall: {{ elasticsearch_memLock }}
 
 # Make sure that the ES_MIN_MEM and ES_MAX_MEM environment variables are set
 # to the same value, and that the machine has enough memory to allocate

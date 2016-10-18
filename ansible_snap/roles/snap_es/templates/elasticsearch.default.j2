@@ -8,7 +8,7 @@ ES_USER={{ elasticsearch_user }}
 ES_GROUP={{ elasticsearch_group }}
 {% endif %}
 
-# Heap Size (defaults to 256m min, 1g max)
+# Heap Size (defaults to 256m min, 4g max)
 #ES_HEAP_SIZE=2g
 {% if elasticsearch_heap_size is defined %}
 ES_HEAP_SIZE={{ elasticsearch_heap_size }}
