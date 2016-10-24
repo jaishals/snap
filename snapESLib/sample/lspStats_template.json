@@ -1,0 +1,33 @@
+{
+  "template": "*statistics",
+  "settings": {
+      "index": {
+        "refresh_interval": "5s"
+      }
+   },
+  "mappings": {
+    "_default_": {
+      "_all": { "enabled": false },
+      "dynamic_templates": [
+        {
+          "strings": {
+            "match": "*",
+            "match_mapping_type": "string",
+            "mapping": { "type": "string",  "doc_values": true, "index": "not_analyzed" }
+          }
+        }
+      ]
+    },
+    "statsdata": {
+      "properties": {
+        "TimeStamp": { "type": "date", "doc_values": true },
+        "Stats":  {
+          "properties" : {
+            "kbps": { "type" : "long", "doc_values": true, "index":"no"},
+            "pps": { "type" :  "long", "doc_values":true, "index":"no"}
+          }
+        }
+      }
+    }
+  }
+}
