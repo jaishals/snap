@@ -1,0 +1,19 @@
+---
+- name: spark-setup | create data directories
+  file:
+    path={{ item }}
+    state=directory
+    mode=0755
+    owner={{ spark_user }}
+    group={{ spark_group }}
+  with_items:
+    - "{{ spark_worker_dir }}"
+  tags:
+    - spark
+
+- name: spark-setup | copy supervisord config
+  template:
+    src=spark-worker-supervisord.conf.j2
+    dest={{ supervisord_programs_dir }}/spark-worker-supervisord.conf
+    mode=0644
+  tags: spark

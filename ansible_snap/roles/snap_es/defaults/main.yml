@@ -27,19 +27,17 @@ elasticsearch_timezone: "Etc/UTC"  # Default to UTC
 elasticsearch_network_host: localhost
 elasticsearch_http_port: 9200
 elasticsearch_heap_size: 4g
-elasticsearch_max_locked_memory: unlimited
-elasticsearch_memLock: true
 
 elasticsearch_index_data: "/var/snap_data/es_data"
 elasticsearch_logs: "/var/snap_logs/es_logs"
-elasticsearch_tmp_files: "/tmp/snap_es_tmp"
+elasticsearch_tmp_files: "/tmp/es_tmp"
+#elasticsearch_http_cors_enabled: "false"
 elasticsearch_service_state: started
 
-#array for elastic search plugins
-# PlugIns
-elasticsearch_plugins:
- - { name: 'mobz/elasticsearch-head' }
- 
+
+
+
+
 
 # Non-Elasticsearch Defaults
 apt_cache_valid_time: 300 # seconds between "apt-get update" calls.
@@ -55,7 +53,7 @@ kibana_host: localhost
 kibana_port: "5601"
 kibana_elasticsearch: "http://localhost:9200"
 kibana_index: ".kibana"
-kibana_log: "/var/snap_logs/snap_kibana_log"
+kibana_log: "/var/snap_logs/kibana_log"
 kibana_log_rotate_count: 5
 kibana_log_rotate_interval: daily
 kibana_nice_level: "0"

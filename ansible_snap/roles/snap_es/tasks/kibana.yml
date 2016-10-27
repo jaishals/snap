@@ -1,28 +1,28 @@
 ---
-- name: kibana-install | Configuring kibana group
+- name: kibana-setup | Configuring kibana group
   group:
     name={{ kibana_group }}
 
-- name: kibana-install | Configuring kibana user
+- name: kibana-setup | Configuring kibana user
   user:
     name={{ kibana_user }}
     group={{ kibana_group }}
     createhome=no
     
-- name: kibana-install | Create service account for Kibana
+- name: kibana-setup | Create service account for Kibana
   user: name=kibana
         system=yes
         home=/var/lib/kibana
         shell=/bin/false
         state=present
 
-- name: kibana-install | Try to stop elasticsearch if running
+- name: kibana-setup | Try to stop elasticsearch if running
   service:
     name=kibana
     state=stopped
   ignore_errors: yes
 
-- name: kibana-install | Download Elasticsearch deb
+- name: kibana-setup | Download Elasticsearch deb
   get_url:
     url={{ kibana_download_url }}/kibana-{{ kibana_version }}-amd64.deb
     dest=/tmp/kibana-{{ kibana_version }}.deb
@@ -30,21 +30,21 @@
     validate_certs=no
 
 #shell: dpkg --remove elasticsearch
-- name: kibana-install | Uninstalling previous version if applicable
+- name: kibana-setup | Uninstalling previous version if applicable
   apt:
      name="kibana"
      state="absent"
 
-- name: kibana-install | Remove kibana directory
+- name: kibana-setup | Remove kibana directory
   file:
     path="{{ kibana_dir }}/kibana"
     state=absent
 
-- name: kibana-install | Install Kibana deb
+- name: kibana-setup | Install Kibana deb
   shell: dpkg -i -E --force-confnew /tmp/kibana-{{ kibana_version }}.deb
   notify: Restart kibana
         
-- name: Configure Kibana
+- name: kibana-setup | Configure Kibana
   template: src=kibana.yml.j2
             dest={{ kibana_dir }}/kibana/config/kibana.yml
             owner={{ kibana_user }}
@@ -57,11 +57,11 @@
   notify:
     - Restart kibana
 
-- name: Touch log file if it does not exist
+- name: kibana-setup | Touch log file if it does not exist
   command: touch {{ kibana_log }}
            creates={{ kibana_log }}
 
-- name: Set log file permissions
+- name: kibana-setup | Set log file permissions
   file: path={{ kibana_log }} owner={{ kibana_user }} group={{ kibana_group }} mode=0644
 
 - name: Configure Kibana log rotation
@@ -71,7 +71,7 @@
   pip: name=passlib
   sudo: yes
  
-- name: Generate kibana htpassword
+- name: kibana-setup | Generate kibana htpassword
   htpasswd: path=/etc/nginx/htpasswd.users name=admin password=admin
   sudo: yes
 

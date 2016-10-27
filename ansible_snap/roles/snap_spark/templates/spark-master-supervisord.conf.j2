@@ -1,0 +1,8 @@
+[program:spark-master]
+command=spark-class org.apache.spark.deploy.master.Master
+autostart=true
+autorestart=true
+stopsignal=KILL
+redirect_stderr=true
+stderr_logfile={{ supervisord_log_dir }}/spark-master
+stderr_logfile_maxbytes={{ spark_stderr_logfile_maxbytes }}

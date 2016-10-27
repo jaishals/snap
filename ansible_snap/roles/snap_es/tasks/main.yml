@@ -13,12 +13,12 @@
     url='http://packages.elasticsearch.org/GPG-KEY-elasticsearch'
   sudo: yes
 
-- name: Install Elasticsearch
+- name: Elasticsearch-Setup
   include: elasticsearch.yml
 
-- name: Install Nginx
+- name: Nginx-Kibana Setup
   include: nginx.yml
 
-- name: Install Kibana
+- name: Kibana Setup
   include: kibana.yml
 

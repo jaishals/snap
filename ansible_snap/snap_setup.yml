@@ -1,0 +1,31 @@
+---
+- name: Setup SuperVisorD
+  hosts: all
+  roles: [snap_supervisord]
+  tags:
+    - supervisord
+  
+- name: ElasticSearch Kibana and Nginx
+  hosts: all
+  roles: [snap_es]
+  tags:
+    - elk
+    - es
+ 
+- name: Spark Master Nodes
+  hosts: spark-master-node
+  vars:
+    - spark_master_enabled: true
+    - spark_worker_enabled: false
+  roles: [ snap_spark ]
+  tags:
+    - spark
+
+- name: Spark Workers
+  hosts: spark-worker-nodes
+  vars:
+    - spark_master_enabled: false
+    - spark_worker_enabled: true
+  roles: [ snap_spark ]
+  tags:
+    - spark
