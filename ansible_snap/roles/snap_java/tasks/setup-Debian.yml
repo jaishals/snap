@@ -1,0 +1,43 @@
+---
+- name: Install add-apt-repostory
+  become: yes
+  apt: name=software-properties-common state=latest
+
+- name: Add Oracle Java Repository
+  become: yes
+  apt_repository: repo='ppa:webupd8team/java'
+
+- name: Add Open JDK repository
+  become: yes
+  apt_repository: repo='ppa:openjdk-r/ppa'
+  
+- name: Accept Java 8 License
+  become: yes
+  debconf: name='oracle-java8-installer' question='shared/accepted-oracle-license-v1-1' value='true' vtype='select'
+
+- name: Install Java Oracle Packages
+  become: yes
+  apt: update-cache=yes name={{item}} state=latest 
+  with_items: "{{ java_oracle_packages }}"
+  when: not java_home_set_to_openjdk
+ 
+- name: Install Java OpenJDK Packages
+  become: yes
+  apt: update-cache=yes name={{item}} state=latest 
+  with_items: "{{ java_openjdk_packages }}"
+  when: java_home_set_to_openjdk 
+     
+#- name: Create default-java symlink
+#  become: yes
+#  file: src="{{ item.src }}"
+#        dest="{{ item.dest }}"
+#        state=link
+#  with_items:
+#    - { src: "/usr/lib/jvm/{{ java_alternative }}/jre/bin/java", dest: "{{ java_home }}" }
+#  tags: java
+  
+- name: Java system environment configuration
+  lineinfile:
+    dest=/etc/environment
+    line="export JAVA_HOME=$JAVA_HOME:{{ java_home }}"
+  tags: java

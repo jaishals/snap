@@ -10,3 +10,13 @@ localhost ansible_connection=local
 [spark-nodes:children]
 spark-master-node
 spark-worker-nodes
+
+[hadoop-namenode-node]
+localhost ansible_connection=local
+
+[hadoop-datanode-nodes]
+localhost ansible_connection=local
+
+[hadoop-nodes:children]
+hadoop-namenode-node
+hadoop-datanode-nodes

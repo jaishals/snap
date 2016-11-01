@@ -1,0 +1,71 @@
+---
+- name: hadoop-setup | name-node | create data directories
+  file:
+    path={{ item }}
+    state=directory
+    mode=0755
+    owner={{ hdfs_user }}
+    group={{ hdfs_group }}
+  with_items:
+    - "{{ dfs_namenode_name_dir }}"
+    - "{{ dfs_tmp_dir }}"
+  tags:
+    - hadoop
+    - hdfs_namenode
+
+- name: hadoop-setup | name-node | format the namenode
+  shell: "echo 'N' | {{ hdfs_exe_dir }}/hdfs namenode -format"
+  args:
+    creates: "{{ dfs_namenode_name_dir }}/current"
+  become: true
+  become_user: "{{ hdfs_user }}"
+  tags:
+    - hadoop
+    - hdfs_namenode
+
+- name: hadoop-setup | name-node | mod namenode permissions
+  file:
+    path="{{ dfs_namenode_name_dir }}/current"
+    state=directory
+    mode=0755
+    owner={{ hdfs_user }}
+    group={{ hdfs_group }}
+    recurse=yes
+  tags:
+    - hadoop
+    - hdfs_namenode
+
+- name: hadoop-setup | name-node | copy supervisord config
+  template:
+    src=hadoop-namenode-supervisord.conf.j2
+    dest={{ supervisord_programs_dir }}/hadoop-namenode-supervisord.conf
+    mode=0644
+  tags: 
+     -hadoop
+    - hdfs_namenode
+      
+- name: hadoop-setup | name-node | add namenode to supervisord
+  supervisorctl:
+    name:  hadoop-hdfs-namenode
+    state: present
+  tags: hadoop
+
+- name: hadoop-setup | name-node | ensure namenode is started
+  supervisorctl:
+    name:  hadoop-hdfs-namenode
+    state: started
+  notify:
+    - wait for hdfs namenode port
+  tags: hadoop
+
+- name: hadoop-setup | name-node | wait for namenode port
+  become: yes
+  wait_for:
+    port: "{{ dfs_namenode_http_address_port }}"
+  tags: hadoop
+  
+- name: hadoop-setup | name-node | ensure tmp directory in hdfs is created with correct permissions
+  shell: "{{ hdfs_exe_dir }}/hadoop fs -mkdir /tmp; {{ hdfs_exe_dir }}/hadoop fs -chmod 1777 /tmp"
+  become: yes
+  become_user: "{{ hdfs_user }}"
+  tags: hadoop

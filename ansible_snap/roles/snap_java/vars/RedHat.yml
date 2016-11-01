@@ -1,0 +1,9 @@
+---
+# The specific version of Oracle Java that can be found in YUM
+java_packages:  
+    - java-1.8.0-openjdk-devel
+ 
+java_home_set_to_openjdk: yes
+java_home_prefix_path: "/usr/lib/jvm"
+
+java_home_jdk_name: jre-1.8.0-openjdk-devel.x86_64

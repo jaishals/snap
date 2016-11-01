@@ -75,15 +75,15 @@
   register: spark_config
   tags: ["config"]
 
-- name: spark-setup | restart spark to apply configuration changes
-  set_fact: spark_config_changed={{ spark_config.changed or (spark_config_changed is defined and spark_config_changed) }}
-  notify:
-    - restart spark master
-    - wait for spark master port
-    - restart spark worker
-    - wait for spark worker port
-  changed_when: spark_config_changed
-  tags: spark
+#- name: spark-setup | restart spark to apply configuration changes
+#  set_fact: spark_config_changed={{ spark_config.changed or (spark_config_changed is defined and spark_config_changed) }}
+#  notify:
+#    - restart spark master
+#    - wait for spark master port
+#    - restart spark worker
+#    - wait for spark worker port
+#  changed_when: spark_config_changed
+#  tags: spark
 
 - include: spark-master.yml
   when: spark_master_enabled
@@ -96,4 +96,26 @@
 - name: spark-setup | reread supervisord
   become: yes
   shell: supervisorctl reread && supervisorctl update
+  tags: spark
+  
+- name: spark-setup | ensure spark-master
+  supervisorctl:
+    name:  spark-master
+    state: started
+  tags: spark
+
+- name: spark-setup | wait for spark master port
+  wait_for:
+    port: "{{ spark_master_webui_port }}"
+  tags: spark
+
+- name: spark-setup | ensure spark-worker
+  supervisorctl:
+    name:  spark-worker
+    state: started
+  tags: spark
+
+- name: spark-setup | wait for spark worker port
+  wait_for:
+    port: "{{ spark_worker_webui_port }}"
   tags: spark

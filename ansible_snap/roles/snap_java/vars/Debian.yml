@@ -1,0 +1,22 @@
+---
+
+java_openjdk_packages:
+    - openjdk-8-jdk
+
+java_oracle_packages:
+    - oracle-java8-installer
+    - ca-certificates
+    - oracle-java8-set-default
+
+java_home_set_to_openjdk: yes
+
+#Set it the name of java directory
+# jdk format     : java-<version>-openjdk-<i386|amd64>
+# oracle format  : java-<version>-oracle
+
+java_home_prefix_path: "/usr/lib/jvm"
+
+java_home_jdk_name: java-8-openjdk-amd64
+java_home_oracle_name: java-8-oracle
+
+
