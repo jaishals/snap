@@ -201,6 +201,10 @@ bootstrap.mlockall: true
 #
 # http.enabled: false
 
+network.host: {{elasticsearch_network_host}}
+
+http.cors.enabled: true
+http.cors.allow-origin: "*"
 
 ################################### Gateway ###################################
 

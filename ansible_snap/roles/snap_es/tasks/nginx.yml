@@ -1,11 +1,4 @@
----
-- name: Nginx-kibana-setup | Install Nginx
-  apt: pkg={{item}} state=latest
-  with_items:
-    - nginx
-    - apache2-utils
-  sudo: yes
-
+--- 
 - name: Nginx-kibana-setup | Create Kibana password
   shell: 
     echo "{{ kibana_user }}:$(openssl passwd -crypt {{ kibana_password }}):kibana" |tee .kibana.htpasswd

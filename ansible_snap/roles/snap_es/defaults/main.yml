@@ -6,19 +6,19 @@ hostname: "nokiasnap"
 #elastic search setup stuff  
 elasticsearch_user: elasticsearch
 elasticsearch_group: elasticsearch
-elasticsearch_download_url: https://download.elasticsearch.org/elasticsearch/elasticsearch
-elasticsearch_version: 2.4.1
+elasticsearch_download_url: https://artifacts.elastic.co/downloads/elasticsearch
+elasticsearch_version: 5.0.0
 
 elasticsearch_max_open_files: 65535
-elasticsearch_home_dir: /usr/share/elasticsearch
-elasticsearch_plugin_dir: /usr/share/elasticsearch/plugins
+elasticsearch_home_dir_prefix: /usr/share/
+elasticsearch_home_dir: "{{ elasticsearch_home_dir_prefix }}/elasticsearch"
+elasticsearch_plugin_dir: "{{ elasticsearch_home_dir }}/plugins"
 elasticsearch_conf_dir: /etc/elasticsearch
 elasticsearch_pid_dir: /var/run
-elasticsearch_service_startonboot: no
 elasticsearch_timezone: "Etc/UTC"  # Default to UTC
 
 #elastic search config stuff
-elasticsearch_network_host: localhost
+elasticsearch_network_host: 0.0.0.0
 elasticsearch_http_port: 9200
 elasticsearch_heap_size: 4g
 
@@ -28,7 +28,6 @@ elasticsearch_tmp_files: "/tmp/es_tmp"
 #elasticsearch_http_cors_enabled: "false"
 elasticsearch_service_state: started
 
-
 # Non-Elasticsearch Defaults
 apt_cache_valid_time: 300 # seconds between "apt-get update" calls.
 elasticsearch_install_java: "true"
@@ -36,8 +35,8 @@ elasticsearch_install_java: "true"
 # kibana config info
 kibana_user: kibana
 kibana_group: kibana
-kibana_download_url: https://download.elastic.co/kibana/kibana
-kibana_version: 4.6.1
+kibana_download_url: https://artifacts.elastic.co/downloads/kibana
+kibana_version: 5.0.0
 kibana_dir: "/opt"
 kibana_host: localhost
 kibana_port: "5601"

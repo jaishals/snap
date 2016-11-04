@@ -32,7 +32,9 @@
  # --------------------------------- ElasticSearch, Kibana -----------------------------------
 - name: ElasticSearch Kibana and Nginx
   hosts: all
-  roles: [snap_es]
+  roles: [snap_es] 
+  vars_files: 
+    - roles/snap_supervisord/defaults/main.yml
   tags:
     - elk
     - es
@@ -104,3 +106,10 @@
     - set_fact: spark_config_changed=false
   tags:
     - spark
+
+ # --------------------------------- ES Hadoop -----------------------------------
+- name: ElasticSearch Hadoop
+  hosts: all
+  roles: [snap_eshadoop]
+  tags:
+    - es-hadoop

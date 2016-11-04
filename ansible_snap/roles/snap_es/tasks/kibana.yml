@@ -22,27 +22,32 @@
     state=stopped
   ignore_errors: yes
 
-- name: kibana-setup | Download Elasticsearch deb
-  get_url:
-    url={{ kibana_download_url }}/kibana-{{ kibana_version }}-amd64.deb
-    dest=/tmp/kibana-{{ kibana_version }}.deb
-    mode=0440
-    validate_certs=no
-
-#shell: dpkg --remove elasticsearch
-- name: kibana-setup | Uninstalling previous version if applicable
-  apt:
-     name="kibana"
-     state="absent"
-
 - name: kibana-setup | Remove kibana directory
   file:
     path="{{ kibana_dir }}/kibana"
     state=absent
+  sudo: yes
 
-- name: kibana-setup | Install Kibana deb
-  shell: dpkg -i -E --force-confnew /tmp/kibana-{{ kibana_version }}.deb
-  notify: Restart kibana
+- name: elasticsearch-setup | Download kibana
+  get_url:
+    url: "{{ kibana_download_url }}/kibana-{{ kibana_version }}-linux-x86_64.tar.gz"
+    dest: "/tmp/kibana-{{ kibana_version }}.tar.gz"
+    mode: 0644
+    owner: "{{ kibana_user }}"
+    group: "{{ kibana_group }}"
+    validate_certs: no
+  
+- name: kibana-setup | Extract kibana
+  unarchive:
+    src: "/tmp/kibana-{{ kibana_version }}.tar.gz"
+    dest: "{{ kibana_dir }}"
+    copy: no
+    owner: "{{ kibana_user }}"
+    group: "{{ kibana_group }}"
+
+- name: kibana-setup | Rename kibana dir
+  command: mv "{{kibana_dir}}/kibana-{{kibana_version}}-linux-x86_64" "{{kibana_dir}}/kibana"
+  sudo: yes
         
 - name: kibana-setup | Configure Kibana
   template: src=kibana.yml.j2

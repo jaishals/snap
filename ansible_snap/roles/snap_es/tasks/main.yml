@@ -2,20 +2,43 @@
 
 - name: Install common apt packages
   apt: pkg={{ item }} state=latest
-  with_items: elk_common_packages
+  with_items: elk_common_apt_packages
   sudo: yes
+  when: ansible_os_family == 'Debian'
+  tags: es
 
-- name: ES apt GPG key
-  apt_key:
-    url='http://packages.elasticsearch.org/GPG-KEY-elasticsearch'
+- name: Install common yum packages 
+  yum: 
+    name={{ item }}
+    state=present
+  with_items: elk_common_yum_packages
   sudo: yes
+  when: ansible_os_family == 'RedHat'
+  tags: es
+  
+#- name: ES apt GPG key
+#  apt_key:
+#    url='http://packages.elasticsearch.org/GPG-KEY-elasticsearch'
+#  sudo: yes
+#  when: ansible_os_family == 'Debian'
+#  tags: es
 
+#- name: ES apt GPG key
+#  apt_key:
+#    url='http://packages.elasticsearch.org/GPG-KEY-elasticsearch'
+#  sudo: yes
+#  when: ansible_os_family == 'Debian'
+#  tags: es
+  
 - name: Elasticsearch-Setup
   include: elasticsearch.yml
+  tags: es
 
 - name: Nginx-Kibana Setup
   include: nginx.yml
+  tags: es
 
 - name: Kibana Setup
   include: kibana.yml
+  tags: es
 

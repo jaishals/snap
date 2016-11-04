@@ -62,12 +62,18 @@
     src: "{{ hdfs_install_dir }}/hadoop-{{ hdfs_version }}"
   tags: hadoop
 
+#- name: hadoop-setup | hadoop system environment configuration
+#  lineinfile:
+#    dest=/etc/environment
+#    line="HADOOP_PREFIX={{ hdfs_install_dir }}/default"
+#  tags: hadoop
+
 - name: hadoop-setup | hadoop system environment configuration
   lineinfile:
-    dest=/etc/environment
+    dest="snap-setup-env.sh"
     line="export HADOOP_PREFIX={{ hdfs_install_dir }}/default"
   tags: hadoop
-
+  
 - name: hadoop-setup | setup hadoop in path
   lineinfile:
     dest="snap-setup-env.sh"

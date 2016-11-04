@@ -36,8 +36,14 @@
 #    - { src: "/usr/lib/jvm/{{ java_alternative }}/jre/bin/java", dest: "{{ java_home }}" }
 #  tags: java
   
+#- name: Java system environment configuration
+#  lineinfile:
+#    dest=/etc/profile
+#    line="export JAVA_HOME={{ java_home }}"
+#  tags: java
+
 - name: Java system environment configuration
   lineinfile:
-    dest=/etc/environment
-    line="export JAVA_HOME=$JAVA_HOME:{{ java_home }}"
+    dest=snap-setup-env.sh
+    line="export JAVA_HOME={{ java_home }}"
   tags: java

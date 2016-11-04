@@ -1,0 +1,5 @@
+---
+
+es_hadoop_install_dir: /opt/eshadoop
+es_hadoop_version: 5.0.0
+es_hadoop_repo:  "http://download.elastic.co/hadoop"
