@@ -103,19 +103,23 @@
     name:  spark-master
     state: started
   tags: spark
-
+  when: spark_master_enabled
+  
 - name: spark-setup | wait for spark master port
   wait_for:
     port: "{{ spark_master_webui_port }}"
   tags: spark
+  when: spark_master_enabled
 
 - name: spark-setup | ensure spark-worker
   supervisorctl:
     name:  spark-worker
     state: started
   tags: spark
-
+  when: spark_worker_enabled
+  
 - name: spark-setup | wait for spark worker port
   wait_for:
     port: "{{ spark_worker_webui_port }}"
   tags: spark
+  when: spark_worker_enabled

@@ -1,5 +1,5 @@
 [program:elasticsearch]
-command="{{ elasticsearch_home_dir }}/bin/elasticsearch"
+command={{ elasticsearch_home_dir }}/bin/elasticsearch --path.conf {{elasticsearch_conf_dir}}
 autostart=true
 autorestart=true
 user={{ elasticsearch_user }}

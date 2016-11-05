@@ -11,9 +11,9 @@
   tags:
     - spark
 
-- name: spark-setup | copy supervisord config
+- name: spark-setup | copy spark-worker supervisord config
   template:
     src=spark-worker-supervisord.conf.j2
-    dest={{ supervisord_programs_dir }}/spark-worker-supervisord.conf
+    dest="{{ supervisord_programs_dir }}/spark-worker-supervisord.conf"
     mode=0644
   tags: spark
