@@ -1,0 +1,4 @@
+---
+#spark-master-node:  [localhost]
+
+#spark-worker-nodes: [localhost]

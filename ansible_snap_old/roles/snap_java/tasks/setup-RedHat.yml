@@ -1,0 +1,36 @@
+---
+
+- name: yum install java 
+  yum: 
+    name={{ item }}
+    state=present
+  tags: java
+  with_items: "{{ java_packages }}"
+  when: java_home_set_to_openjdk 
+  
+#- name: Copy the java.sh
+#  become: true
+#  copy:
+#    src=java.sh
+#    dest=/etc/profile.d/java.sh
+#    mode=0755
+#  tags: java
+
+#- name: Fill up the script for java.sh
+#  become: true
+#  lineinfile:
+#    dest=/etc/profile.d/java.sh
+#    line="export JAVA_HOME={{ java_home }}"
+#  tags: java
+
+#- name: Java system environment configuration
+#  lineinfile:
+#    dest=/etc/profile
+#    line="export JAVA_HOME={{ java_home }}"
+#  tags: java
+
+- name: Java system environment configuration
+  lineinfile:
+    dest=snap-setup-env.sh
+    line="export JAVA_HOME={{ java_home }}"
+  tags: java

@@ -4,6 +4,25 @@
     name: vm.swappiness
     value: "{{elasticsearch_vm_swapiness}}"
 
+- name: elasticsearch-setup | Configuring vm.swappiness
+  lineinfile:
+    dest: /opt/snap/setup.sh
+    regexp: '^vm.swappiness'
+    insertafter: EOF
+    line: 'sysctl vm.swappiness={{elasticsearch_vm_swapiness}}'
+
+- name: elasticsearch-setup | set vm.max_map_count
+  sysctl:
+    name: vm.max_map_count
+    value: 262144
+    
+- name: elasticsearch-setup | Configuring vm.max_map_count
+  lineinfile:
+    dest: /opt/snap/setup.sh
+    regexp: '^vm.max_map_count=262144'
+    insertafter: EOF
+    line: 'sysctl vm.max_map_count=262144'
+  
 
 - name: elasticsearch-setup | Configuring elastic group
   group:
@@ -98,7 +117,15 @@
     group={{ elasticsearch_group }}
     mode=0755
   when: elasticsearch_conf_dir is defined
-#  notify: Restart elasticsearch
+
+- name: elasticsearch-setup | Configuring Elasticsearch logging properties
+  template:
+    src=log4j2.properties.j2
+    dest={{ elasticsearch_conf_dir }}/log4j2.properties
+    owner={{ elasticsearch_user }}
+    group={{ elasticsearch_group }}
+    mode=0755
+  when: elasticsearch_conf_dir is defined
 
 - name : elasticsearch-setup | Configure /etc/default/elasticsearch
   template:
@@ -107,17 +134,26 @@
     owner={{ elasticsearch_user }}
     group={{ elasticsearch_group }}
     mode=0755
-#  notify: Restart elasticsearch
  
 - name: elasticsearch-setup | set elasticsearch limits configuration
   template:
     src=elasticsearch-limits.conf.j2
     dest=/etc/security/limits.d/elasticsearch-limits.conf
     mode=0755
-   
-#- name: Start Elasticsearch
-#  become: true
-#  service: name=elasticsearch state={{ elasticsearch_service_state }} enabled=yes
+ 
+- name: elasticsearch-setup | Configuring open file limits
+  lineinfile:
+    dest: /etc/pam.d/common-session
+    regexp: '^session    required   pam_limits.so'
+    insertafter: EOF
+    line: 'session    required   pam_limits.so'
+
+- name: elasticsearch-setup | Configuring open file limits
+  lineinfile:
+    dest: /etc/pam.d/su
+    regexp: '^session    required   pam_limits.so'
+    insertafter: EOF
+    line: 'session    required   pam_limits.so'
 
 - name: elasticsearch-setup | copy supervisord config
   template:
@@ -142,13 +178,13 @@
   
 - name: elasticsearch-setup | Make sure Elasticsearch is running before proceeding.
   become: true
-  wait_for: port={{ elasticsearch_http_port }} delay=3 timeout=30
+  wait_for: port={{ elasticsearch_http_port }} delay=3 timeout=60
 
-- name: elasticsearch-setup | check for existing head plugin
-  stat:
-    path: "{{ elasticsearch_plugin_dir }}/head"
-  register: eshead
+#- name: elasticsearch-setup | check for existing head plugin
+#  stat:
+#   path: "{{ elasticsearch_plugin_dir }}/head"
+#  register: eshead
 
-- name: elasticsearch-setup | install head plugin
-  shell: "{{ elasticsearch_home_dir }}/bin/plugin install mobz/elasticsearch-head"
-  when:  eshead.stat.isdir is not defined
+#- name: elasticsearch-setup | install head plugin
+#  shell: "{{ elasticsearch_home_dir }}/bin/plugin install mobz/elasticsearch-head"
+#  when:  eshead.stat.isdir is not defined

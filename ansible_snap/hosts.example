@@ -1,6 +1,14 @@
 [all]
 localhost ansible_connection=local
 
+[elasticsearch-master-nodes]
+
+[elasticsearch-data-nodes]
+
+[elasticsearch-nodes:children]
+elasticsearch-master-nodes
+elasticsearch-data-nodes
+
 [spark-master-node]
 localhost ansible_connection=local
 

@@ -1,0 +1,149 @@
+---
+- name: hadoop-setup | Configuring group
+  group:
+    name: "{{ hdfs_group }}"
+  tags:
+    - hadoop
+
+- name: hadoop-setup | Configuring user
+  user:
+    name: "{{ hdfs_user }}"
+    group: "{{ hdfs_group }}"
+    createhome: no
+  tags:
+    - hadoop
+
+- name: hadoop-setup | create hadoop install directory
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0755
+    owner: "{{ hdfs_user }}"
+    group: "{{ hdfs_group }}"
+  with_items:
+    - "{{ hdfs_install_dir }}"
+  tags: hadoop
+
+- name: hadoop-setup | check for existing install
+  stat: path="{{ hdfs_install_dir }}/hadoop-{{ hdfs_version }}"
+  register: hadoop
+  tags: hadoop
+
+- name: hadoop-setup | download hadoop
+  get_url:
+    url: "{{ hdfs_url }}/hadoop-{{ hdfs_version }}.tar.gz"
+    dest: /tmp/hadoop-{{ hdfs_version }}.tgz
+    mode: 0644
+    validate_certs: no
+  when: hadoop.stat.isdir is not defined
+  tags: hadoop
+
+- name: hadoop-setup | extract hadoop
+  unarchive:
+    src: /tmp/hadoop-{{ hdfs_version }}.tgz
+    dest: "{{ hdfs_install_dir }}"
+    copy: no
+    owner: "{{ hdfs_user }}"
+    group: "{{ hdfs_group }}"
+  when: hadoop.stat.isdir is not defined
+  tags: hadoop
+
+- name: hadoop-setup | delete temporary hadoop file
+  file:
+    path: /tmp/hadoop-{{ hdfs_version }}.tgz
+    state: absent
+  ignore_errors: yes
+  tags: hadoop
+
+- name: hadoop-setup | create hadoop symlink
+  file:
+    path: "{{ hdfs_install_dir }}/default"
+    state: link
+    src: "{{ hdfs_install_dir }}/hadoop-{{ hdfs_version }}"
+  tags: hadoop
+
+#- name: hadoop-setup | hadoop system environment configuration
+#  lineinfile:
+#    dest=/etc/environment
+#    line="HADOOP_PREFIX={{ hdfs_install_dir }}/default"
+#  tags: hadoop
+
+- name: hadoop-setup | hadoop system environment configuration
+  lineinfile:
+    dest="snap-setup-env.sh"
+    line="export HADOOP_PREFIX={{ hdfs_install_dir }}/default"
+  tags: hadoop
+  
+- name: hadoop-setup | setup hadoop in path
+  lineinfile:
+    dest="snap-setup-env.sh"
+    line={{ item }}
+  with_items:
+   - 'count=$(echo $PATH | grep -c "{{ hdfs_install_dir }}/default/bin")'
+   - 'if [ $count -eq 0 ]; then'
+   - ' export PATH=:"$PATH:{{ hdfs_install_dir }}/default/bin"'
+   - 'fi'
+  tags: hadoop,env-setup
+
+- name: hadoop-setup |configure *-site.xml files
+  template:
+    src={{ item }}
+    dest="{{ hdfs_conf_dir }}/{{ item | regex_replace('.j2', '') }}"
+    mode=0644
+  with_items:
+    - core-site.xml.j2
+    - hdfs-site.xml.j2
+    - yarn-site.xml.j2
+    - mapred-site.xml.j2
+    - hadoop-env.sh.j2
+  register: hadoop_config
+  tags: hadoop
+  
+- include: hdfs-namenode.yml
+  when: hdfs_namenode_enabled
+  tags:
+    - hadoop
+    - hdfs_namenode
+
+- include: hdfs-datanode.yml
+  when: hdfs_datanode_enabled
+  tags:
+    - hadoop
+    - hdfs_datanode
+
+#- include: yarn-resourcemanager.yml
+#  when: yarn_resourcemanager_enabled
+#  tags:
+#    - hadoop
+#    - yarn_resourcemanager
+
+#- include: yarn-nodemanager.yml
+#  when: yarn_nodemanager_enabled
+#  tags:
+#    - hadoop
+#    - yarn_nodemanager
+
+#- include: yarn-historyserver.yml
+#  when: yarn_historyserver_enabled
+#  tags:
+#   - hadoop
+#    - yarn_historyserver
+
+#- include: mapreduce-historyserver.yml
+#  when: mapreduce_historyserver_enabled
+#  tags:
+#    - hadoop
+#    - mapreduce_historyserver
+
+#- name: hadoop-setup | restart hadoop to apply configuration changes
+#  set_fact: hadoop_config_changed={{ hadoop_config.changed or (hadoop_config_changed is defined and hadoop_config_changed) }}
+#  notify:
+#    - reread supervisord
+#    #- restart hdfs namenode
+#    - wait for hdfs namenode port
+#    #- restart hdfs datanode
+#    #- wait for hdfs datanode port
+#  changed_when: hadoop_config_changed
+#  tags: hadoop
+
+

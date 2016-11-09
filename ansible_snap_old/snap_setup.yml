@@ -1,0 +1,115 @@
+---
+# --------------------------------- Env/Path Setup -----------------------------------------
+- hosts: all
+  become: true
+  tasks:
+   - name: Cleanup Existing SetupEnv File
+     file: path=snap-setup-env.sh state=absent mode=0777
+  
+   - name: Create Existing SetupEnv File
+     file: path=snap-setup-env.sh state=touch mode=0777
+
+   - name: hadoop-setup | make it a bash script
+     lineinfile:
+       dest="snap-setup-env.sh"
+       line="#!bin/bash"
+  tags:
+    - env-setup
+ # --------------------------------- JAVA ------------------------------------------
+- name: Java
+  hosts: all
+  roles: [snap_java]
+  tags:
+    - java
+  
+ # --------------------------------- Supervisord -----------------------------------
+- name: SuperVisord
+  hosts: all
+  roles: [snap_supervisord]
+  tags:
+    - supervisord
+  
+ # --------------------------------- ElasticSearch, Kibana -----------------------------------
+- name: ElasticSearch Kibana and Nginx
+  hosts: all
+  roles: [snap_es] 
+  vars_files: 
+    - roles/snap_supervisord/defaults/main.yml
+  tags:
+    - elk
+    - es
+ 
+ # --------------------------------- Hadoop -----------------------------------
+- name: HDFS Namenode
+  hosts: hadoop-namenode-node
+  vars_files: 
+    - roles/snap_supervisord/defaults/main.yml
+  vars:
+    - hdfs_namenode_enabled: true
+    - yarn_resourcemanager_enabled: false
+    - yarn_historyserver_enabled: false
+    - mapreduce_historyserver_enabled: false
+    - dfs_namenode_host: "{{ groups['hadoop-namenode-node'][0] }}"
+    - yarn_resourcemanager_hostname: "{{ groups['hadoop-namenode-node'][0] }}"
+    - yarn_historyserver_hostname: "{{ groups['hadoop-namenode-node'][0] }}"
+  roles: [ snap_hadoop ]
+  tags:
+    - hadoop
+    
+- name: HDFS Datanodes
+  hosts: hadoop-datanode-nodes
+  vars_files: 
+    - roles/snap_supervisord/defaults/main.yml
+  vars:
+    - hdfs_datanode_enabled: true
+    - yarn_nodemanager_enabled: false
+    - dfs_namenode_host: "{{ groups['hadoop-namenode-node'][0] }}"
+    - yarn_resourcemanager_hostname: "{{ groups['hadoop-namenode-node'][0] }}"
+    - yarn_historyserver_hostname: "{{ groups['hadoop-namenode-node'][0] }}"
+  roles: [ snap_hadoop ]
+  tags:
+    - hadoop
+
+- name: Hadoop Configuration Changed Fact Reset
+  hosts: hadoop-nodes
+  tasks:
+    - set_fact: hadoop_config_changed=false
+  tags:
+    - hadoop
+
+ # --------------------------------- Spark -----------------------------------
+- name: Spark Master Nodes
+  hosts: spark-master-node
+  vars_files: 
+    - roles/snap_supervisord/defaults/main.yml
+  vars:
+    - spark_master_enabled: true
+    - spark_worker_enabled: false
+  roles: [ snap_spark ]
+  tags:
+    - spark
+
+- name: Spark Workers
+  hosts: spark-worker-nodes
+  vars_files: 
+    - roles/snap_supervisord/defaults/main.yml
+  vars:
+    - spark_master_enabled: false
+    - spark_worker_enabled: true
+  roles: [ snap_spark ]
+  tags:
+    - spark
+
+- name: Spark Configuration Changed Fact Reset
+  hosts: spark-nodes
+  tasks:
+    - set_fact: spark_config_changed=false
+  tags:
+    - spark
+
+ # --------------------------------- ES Hadoop -----------------------------------
+- name: ElasticSearch Hadoop
+  hosts: all
+  roles: [snap_eshadoop]
+  tags:
+    - es-hadoop

@@ -1,0 +1,19 @@
+--- 
+- name: Nginx-kibana-setup | Create Kibana password
+  shell: 
+    echo "{{ kibana_user }}:$(openssl passwd -crypt {{ kibana_password }}):kibana" |tee .kibana.htpasswd
+  args:
+    chdir: /etc/nginx/conf.d
+    creates: /etc/nginx/conf.d/.kibana.htpasswd
+  sudo: yes
+  register: http_pass_gen
+  when: kibana_user is defined and kibana_password is defined 
+  
+- name: Nginx-kibana-setup | Copying nginx conf
+  template: src=nginx.conf.j2 
+            dest=/etc/nginx/nginx.conf
+  notify: Restart Nginx
+
+- name: Nginx-kibana-setup | Copying Kibana conf
+  template: src=nginx-kibana-conf.j2 dest=/etc/nginx/conf.d/kibana.conf  
+  notify: Restart Nginx

@@ -1,0 +1,85 @@
+---
+- name: kibana-install | Configuring kibana group
+  group:
+    name={{ kibana_group }}
+
+- name: kibana-install | Configuring kibana user
+  user:
+    name={{ kibana_user }}
+    group={{ kibana_group }}
+    createhome=no
+    
+- name: kibana-install | Create service account for Kibana
+  user: name=kibana
+        system=yes
+        home=/var/lib/kibana
+        shell=/bin/false
+        state=present
+
+- name: kibana-install | Try to stop elasticsearch if running
+  service:
+    name=kibana
+    state=stopped
+  ignore_errors: yes
+
+- name: Download Kibana
+  get_url: url=https://download.elasticsearch.org/kibana/kibana/kibana-{{ kibana_version }}-{{ kibana_os }}-{{ kibana_arch }}.tar.gz
+           dest=/usr/local/src/kibana-{{ kibana_version }}-{{ kibana_os }}-{{ kibana_arch }}.tar.gz
+           validate_certs=no
+           owner={{ kibana_user }}
+           group={{ kibana_group }}
+           
+
+- name: kibana-install | Extract and install Kibana
+  unarchive: src=/usr/local/src/kibana-{{ kibana_version }}-{{ kibana_os }}-{{ kibana_arch }}.tar.gz
+             dest={{ kibana_dir }}
+             copy=no
+             mode=0440
+             owner={{ kibana_user }}
+             group={{ kibana_group }}
+- name: kibana-install | fixing unix permissions
+  file: path: {{ kibana_dir }}/kibana-{{ kibana_version }}-{{ kibana_os }}-{{ kibana_arch }}
+        owner={{ kibana_user }}
+        group={{ kibana_group }}
+        mode=0440
+        recurse=yes
+        state=directory
+        
+- name: Configure Kibana
+  template: src=kibana.yml.j2
+            dest={{ kibana_dir }}/kibana-{{ kibana_version }}-{{ kibana_os }}-{{ kibana_arch }}/config/kibana.yml
+            owner={{ kibana_user }}
+            group={{ kibana_group }}
+  notify:
+    - Restart kibana
+
+- name: Configure Kibana service definition
+  template: src=kibana.conf.j2 dest=/etc/init/kibana.conf
+  notify:
+    - Restart kibana
+
+- name: Touch log file if it does not exist
+  command: touch {{ kibana_log }}
+           creates={{ kibana_log }}
+
+- name: Set log file permissions
+  file: path={{ kibana_log }} owner={{ kibana_user }} group={{ kibana_group }} mode=0644
+
+- name: Configure Kibana log rotation
+  template: src=logrotate_kibana.j2 dest=/etc/logrotate.d/kibana
+
+- name: Install python-passlib for htpassword
+  pip: name=passlib
+  sudo: yes
+ 
+- name: Generate kibana htpassword
+  htpasswd: path=/etc/nginx/htpasswd.users name=admin password=admin
+  sudo: yes
+
+#- name: Change /etc/nginx/sites-available/default file
+#  template:
+#    src=nginx_sa_default.yml.j2
+#    dest=/etc/nginx/sites-available/default
+#    owner={{kibana_user}} group={{kibana_group}} mode=644
+#  sudo: yes
+#  notify: Restart kibana

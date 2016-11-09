@@ -70,13 +70,13 @@
 
 - name: hadoop-setup | hadoop system environment configuration
   lineinfile:
-    dest="snap-setup-env.sh"
+    dest="/opt/snap/setup.sh"
     line="export HADOOP_PREFIX={{ hdfs_install_dir }}/default"
   tags: hadoop
   
 - name: hadoop-setup | setup hadoop in path
   lineinfile:
-    dest="snap-setup-env.sh"
+    dest="/opt/snap/setup.sh"
     line={{ item }}
   with_items:
    - 'count=$(echo $PATH | grep -c "{{ hdfs_install_dir }}/default/bin")'

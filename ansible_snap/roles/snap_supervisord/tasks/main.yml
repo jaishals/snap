@@ -42,6 +42,17 @@
   tags: supervisord
   when: ansible_os_family == "Debian"
 
+- name: elasticsearch-setup | set ulimit on system
+  become: true
+  shell: ulimit -l unlimited
+
+- name: elasticsearch-setup | set ulimit in setup-file
+  lineinfile:
+    dest: /opt/snap/setup.sh
+    regexp: '^ulimit -l unlimited'
+    insertafter: EOF
+    line: 'ulimit -l unlimited'
+    
 - name: supervisord setup | ensure supervisord is running
   service:
     name: supervisord

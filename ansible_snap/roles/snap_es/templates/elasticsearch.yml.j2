@@ -4,17 +4,12 @@
 # Please see the source file for context and more information:
 # https://github.com/elastic/elasticsearch/blob/master/core/config/elasticsearch.yml
 
-# Scripting
-script.groovy.sandbox.enabled: true
-script.inline: true
-script.indexed: true
-
 ################################### Cluster ###################################
 
 # Cluster name identifies your cluster for auto-discovery. If you're running
 # multiple clusters on the same network, make sure you're using unique names.
 #
-cluster.name: SNAP
+cluster.name: {{ elasticsearch_cluster_name }}
 
 
 #################################### Node #####################################
@@ -22,19 +17,16 @@ cluster.name: SNAP
 # Node names are generated dynamically on startup, so you're relieved
 # from configuring them manually. You can tie this node to a specific name:
 #
-node.name: snap_master1
-
 # Every node can be configured to allow or deny being eligible as the master,
 # and to allow or deny to store the data.
 #
 # Allow this node to be eligible as a master node (enabled by default):
 #
-node.master: true
+# node.master: true
 #
 # Allow this node to store data (enabled by default):
 #
-node.data: true
-
+# node.data: true
 # You can exploit these settings to design advanced cluster topologies.
 #
 # 1. You want this node to never become a master node, only to hold data.
@@ -72,60 +64,14 @@ node.data: true
 # to disable it, set the following:
 # node.max_local_storage_nodes: 1
 
-#################################### Index ####################################
-
-# You can set a number of options (such as shard/replica options, mapping
-# or analyzer definitions, translog settings, ...) for indices globally,
-# in this file.
-#
-# Note, that it makes more sense to configure index settings specifically for
-# a certain index, either when creating it or by using the index templates API.
-#
-# See <http://elasticsearch.org/guide/reference/index-modules/> and
-# <http://elasticsearch.org/guide/reference/api/admin-indices-create-index.html>
-# for more information.
-
-# Set the number of shards (splits) of an index (5 by default):
-#
-index.number_of_shards: 1
-
-# Set the number of replicas (additional copies) of an index (1 by default):
-#
-index.number_of_replicas: 0
-
-# Note, that for development on a local machine, with small indices, it usually
-# makes sense to "disable" the distributed features:
-#
-# index.number_of_shards: 1
-# index.number_of_replicas: 0
-
-# These settings directly affect the performance of index and search operations
-# in your cluster. Assuming you have enough machines to hold shards and
-# replicas, the rule of thumb is:
-#
-# 1. Having more *shards* enhances the _indexing_ performance and allows to
-#    _distribute_ a big index across machines.
-# 2. Having more *replicas* enhances the _search_ performance and improves the
-#    cluster _availability_.
-#
-# The "number_of_shards" is a one-time setting for an index.
-#
-# The "number_of_replicas" can be increased or decreased anytime,
-# by using the Index Update Settings API.
-#
-# ElasticSearch takes care about load balancing, relocating, gathering the
-# results from nodes, etc. Experiment with different settings to fine-tune
-# your setup.
-
-# Use the Index Status API (<http://localhost:9200/A/_status>) to inspect
-# the index status.
-
+node.name: snap_master1
+node.master: {{ elasticsearch_is_master }}
+node.data: {{ elasticsearch_is_data }}
 
 #################################### Paths ####################################
 
 # Path to directory where to store index data allocated for this node.
 #
-path.data: {{ elasticsearch_index_data }}
 #
 # Can optionally include more than one location, causing data to be striped across
 # the locations (Ã  la RAID 0) on a file level, favouring locations with most free
@@ -136,11 +82,12 @@ path.data: {{ elasticsearch_index_data }}
 # Path to temporary files:
 #
 # path.work: /path/to/work
-path.work: {{ elasticsearch_tmp_files }}
 
 # Path to log files:
 #
 # path.logs: /path/to/logs
+
+path.data: {{ elasticsearch_index_data }}
 path.logs: {{ elasticsearch_logs }}
 
 
@@ -151,7 +98,7 @@ path.logs: {{ elasticsearch_logs }}
 #
 # Set this property to true to lock the memory:
 #
-bootstrap.mlockall: true
+# bootstrap.memory_lock: true
 
 # Make sure that the ES_MIN_MEM and ES_MAX_MEM environment variables are set
 # to the same value, and that the machine has enough memory to allocate
@@ -160,6 +107,7 @@ bootstrap.mlockall: true
 # You should also make sure that the ElasticSearch process is allowed to lock
 # the memory, eg. by using `ulimit -l unlimited`.
 
+bootstrap.memory_lock: {{ elasticsearch_memory_bootstrap_mlockall }}
 
 ############################## Network And HTTP ###############################
 
@@ -203,8 +151,8 @@ bootstrap.mlockall: true
 
 network.host: {{elasticsearch_network_host}}
 
-#http.cors.enabled: true
-#http.cors.allow-origin: "*"
+http.cors.enabled: true
+http.cors.allow-origin: "*"
 
 ################################### Gateway ###################################
 
@@ -266,25 +214,26 @@ network.host: {{elasticsearch_network_host}}
 # indices.recovery.concurrent_streams: 5
 
 
-################################## Discovery ##################################
-
-# Discovery infrastructure ensures nodes can be found within a cluster
-# and master node is elected. Multicast discovery is the default.
-
-# Set to ensure a node sees N other master eligible nodes to be considered
-# operational within the cluster. Set this option to a higher value (2-4)
-# for large clusters (>3 nodes):
+############################## Discovery ####################################
 #
-# discovery.zen.minimum_master_nodes: 1
+# Elasticsearch nodes will find each other via unicast, by default.
+#
+# Pass an initial list of hosts to perform discovery when new node is started:
+# The default list of hosts is ["127.0.0.1", "[::1]"]
+#
+# discovery.zen.ping.unicast.hosts: ["host1", "host2"]
 
+#
+# Prevent the "split brain" by configuring the majority of nodes (total number of nodes / 2 + 1):
+#
+# discovery.zen.minimum_master_nodes: 3
+#
 # Set the time to wait for ping responses from other nodes when discovering.
 # Set this option to a higher value on a slow or congested network
 # to minimize discovery failures:
 #
 # discovery.zen.ping.timeout: 3s
 
-# See <http://elasticsearch.org/guide/reference/modules/discovery/zen.html>
-# for more information.
 
 # Unicast discovery allows to explicitly control which nodes will be used
 # to discover the cluster. It can be used when multicast is not present,
@@ -293,20 +242,10 @@ network.host: {{elasticsearch_network_host}}
 # 1. Disable multicast discovery (enabled by default):
 #
 # discovery.zen.ping.multicast.enabled: false
-#
-# 2. Configure an initial list of master nodes in the cluster
-#    to perform discovery when new nodes (master or data) are started:
-#
-# discovery.zen.ping.unicast.hosts: ["host1", "host2:port", "host3[portX-portY]"]
 
-# EC2 discovery allows to use AWS EC2 API in order to perform discovery.
-#
-# You have to install the cloud-aws plugin for enabling the EC2 discovery.
-#
-# See <http://elasticsearch.org/guide/reference/modules/discovery/ec2.html>
-# for more information.
-#
-# See <http://elasticsearch.org/tutorials/2011/08/22/elasticsearch-on-ec2.html>
-# for a step-by-step tutorial.
+discovery.zen.minimum_master_nodes: {{ elasticsearch_discovery_zen_minimum_master_nodes }}
+
+discovery.zen.ping.unicast.hosts: [{% for host in elasticsearch_host_list %}"{{ host }}"{% if not loop.last %},{% endif %}{% endfor %}]
+discovery.zen.ping_timeout: {{ elasticsearch_discovery_zen_ping_timeout }}
 
 

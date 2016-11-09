@@ -1,17 +1,32 @@
 ---
-# --------------------------------- Env/Path Setup -----------------------------------------
+# --------------------------------- Env/Path Setup ----------------------------------------- 
 - hosts: all
   become: true
+  vars:
+    #Dont change the location
+    conf_dir: "/opt/snap"
   tasks:
+   - name: Create snap-conf directory
+     file:
+       path="{{conf_dir}}"
+       state=directory
+       mode=0755
+
    - name: Cleanup Existing SetupEnv File
-     file: path=snap-setup-env.sh state=absent mode=0777
+     file: 
+       path={{conf_dir}}/setup.sh 
+       state=absent
+       mode=0777
   
    - name: Create Existing SetupEnv File
-     file: path=snap-setup-env.sh state=touch mode=0777
+     file: 
+       path={{conf_dir}}/setup.sh 
+       state=touch
+       mode=0777
 
-   - name: hadoop-setup | make it a bash script
+   - name: Make the setup file a bash scrip
      lineinfile:
-       dest="snap-setup-env.sh"
+       dest="{{conf_dir}}/setup.sh"
        line="#!bin/bash"
   tags:
     - env-setup
@@ -33,6 +48,8 @@
 - name: ElasticSearch Kibana and Nginx
   hosts: all
   roles: [snap_es] 
+  vars:
+    - elasticsearch_host_list: "{{ groups['elasticsearch-nodes'] }}"
   vars_files: 
     - roles/snap_supervisord/defaults/main.yml
   tags:

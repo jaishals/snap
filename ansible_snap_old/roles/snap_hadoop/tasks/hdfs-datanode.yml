@@ -1,0 +1,41 @@
+---
+- name: hadoop-setup | data-node | create data directories
+  file:
+    path={{ item }}
+    state=directory
+    mode=0755
+    owner={{ hdfs_user }}
+    group={{ hdfs_group }}
+  with_items:
+    - "{{ dfs_datanode_data_dir }}"
+  tags:
+    - hadoop
+    - hdfs_datanode
+
+- name: hadoop-setup | data-node | copy supervisord config
+  template:
+    src: hadoop-datanode-supervisord.conf.j2
+    dest: "{{ supervisord_programs_dir }}/hadoop-datanode-supervisord.conf"
+    mode: 0644
+  tags: hadoop
+
+- name: hadoop-setup | data-node | add datanode to supervisord
+  supervisorctl:
+    name:  hadoop-hdfs-datanode
+    state: present
+  tags: hadoop
+
+- name: hadoop-setup | data-node | ensure datanode is started
+  supervisorctl:
+    name:  hadoop-hdfs-datanode
+    state: started
+  notify:
+    - wait for hdfs datanode port
+  tags: hadoop
+
+- name: hadoop-setup | name-node | wait for datanode port
+  become: yes
+  wait_for:
+    port: "{{ dfs_datanode_http_address_port }}"
+  tags: hadoop
+  

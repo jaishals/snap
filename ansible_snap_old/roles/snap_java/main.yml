@@ -1,0 +1,2 @@
+dependencies:
+  - { role: snap_supervisord, when: "supervisord_has_run is not defined" }

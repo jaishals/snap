@@ -1,0 +1,154 @@
+---
+- name: elasticsearch-setup | set vm.swappiness to 1 for performance
+  sysctl:
+    name: vm.swappiness
+    value: "{{elasticsearch_vm_swapiness}}"
+
+
+- name: elasticsearch-setup | Configuring elastic group
+  group:
+    name={{ elasticsearch_group }}
+
+- name: elasticsearch-setup | Configuring elastic user
+  user:
+    name={{ elasticsearch_user }}
+    group={{ elasticsearch_group }}
+    createhome=no
+
+- name: elasticsearch-setup | Check if we have elastic with same version installed
+  stat:
+    path="{{elasticsearch_home_dir}}/lib/elasticsearch-{{ elasticsearch_version }}.jar"
+  register: installed_version
+
+- name: elasticsearch-setup | stop elastic search
+  supervisorctl:
+    name:  elasticsearch
+    state: absent
+  sudo: yes
+  when: not installed_version.stat.exists
+
+- name: elasticsearch-setup | Remove elasticsearch directory
+  file:
+    path="{{ elasticsearch_home_dir }}"
+    state=absent
+  sudo: yes
+  when: not installed_version.stat.exists
+
+- name: elasticsearch-setup | Ensure elastic directories exists
+  file:
+    path="{{ item }}"
+    state=directory
+    owner={{ elasticsearch_user }}
+    group={{ elasticsearch_group }}
+    recurse=yes
+    mode=0755
+  with_items:
+     - "{{ elasticsearch_index_data }}"
+     - "{{ elasticsearch_logs }}"
+     - "{{ elasticsearch_tmp_files }}"
+     - "{{ elasticsearch_conf_dir }}"
+
+- name: elasticsearch-setup | Download elasticsearch
+  get_url:
+    url: "{{ elasticsearch_download_url }}/elasticsearch-{{ elasticsearch_version }}.tar.gz"
+    dest: "/tmp/elasticsearch-{{ elasticsearch_version }}.tar.gz"
+    mode: 0644
+    owner: "{{ elasticsearch_user }}"
+    group: "{{ elasticsearch_group }}"
+    validate_certs: no
+  when: not installed_version.stat.exists
+
+- name: elasticsearch-setup | Extract elasticsearch
+  unarchive:
+    src: "/tmp/elasticsearch-{{ elasticsearch_version }}.tar.gz"
+    dest: "{{ elasticsearch_home_dir_prefix }}"
+    copy: no
+    owner: "{{ elasticsearch_user }}"
+    group: "{{ elasticsearch_group }}"
+  when: not installed_version.stat.exists
+
+- name: elasticsearch-setup | Rename elasticsearch dir
+  command: mv "{{elasticsearch_home_dir_prefix}}/elasticsearch-{{elasticsearch_version}}/" "{{elasticsearch_home_dir}}"
+  sudo: yes
+  when: not installed_version.stat.exists
+
+  
+- name: elasticsearch-setup | delete temporary elasticsearch file
+  file:
+    path="/tmp/elasticsearch-{{ elasticsearch_version }}.tar.gz"
+    state=absent
+  ignore_errors: yes
+  when: not installed_version.stat.exists
+
+
+- name: Change elasticsearch file permissions
+  file:
+    path="{{ elasticsearch_home_dir }}"
+    recurse=yes
+    owner="{{ elasticsearch_user }}"
+    group="{{ elasticsearch_group }}"
+    recurse=yes
+    mode=0755
+
+- name: elasticsearch-setup | Configuring Elasticsearch elasticsearch.yml Node
+  template:
+    src=elasticsearch.yml.j2
+    dest={{ elasticsearch_conf_dir }}/elasticsearch.yml
+    owner={{ elasticsearch_user }}
+    group={{ elasticsearch_group }}
+    mode=0755
+  when: elasticsearch_conf_dir is defined
+#  notify: Restart elasticsearch
+
+- name : elasticsearch-setup | Configure /etc/default/elasticsearch
+  template:
+    src=elasticsearch.default.j2
+    dest=/etc/default/elasticsearch
+    owner={{ elasticsearch_user }}
+    group={{ elasticsearch_group }}
+    mode=0755
+#  notify: Restart elasticsearch
+ 
+- name: elasticsearch-setup | set elasticsearch limits configuration
+  template:
+    src=elasticsearch-limits.conf.j2
+    dest=/etc/security/limits.d/elasticsearch-limits.conf
+    mode=0755
+   
+#- name: Start Elasticsearch
+#  become: true
+#  service: name=elasticsearch state={{ elasticsearch_service_state }} enabled=yes
+
+- name: elasticsearch-setup | copy supervisord config
+  template:
+    src=elasticsearch-supervisord.conf.j2
+    dest={{ supervisord_programs_dir }}/elasticsearch-supervisord.conf
+    mode=0755
+
+- name: elasticsearch-setup |  add elasticsearch to supervisord
+  supervisorctl:
+    name:  elasticsearch
+    state: present
+     
+- name: elasticsearch-setup | reread  and update supervisord
+  shell: supervisorctl reread && supervisorctl update
+  become: true
+  
+- name: elasticsearch-setup | start elastic search
+  supervisorctl:
+    name:  elasticsearch
+    state: started
+  become: true
+  
+- name: elasticsearch-setup | Make sure Elasticsearch is running before proceeding.
+  become: true
+  wait_for: port={{ elasticsearch_http_port }} delay=3 timeout=30
+
+- name: elasticsearch-setup | check for existing head plugin
+  stat:
+    path: "{{ elasticsearch_plugin_dir }}/head"
+  register: eshead
+
+- name: elasticsearch-setup | install head plugin
+  shell: "{{ elasticsearch_home_dir }}/bin/plugin install mobz/elasticsearch-head"
+  when:  eshead.stat.isdir is not defined

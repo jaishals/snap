@@ -1,0 +1,21 @@
+---
+- name: Restart elasticsearch
+  service: 
+    name=elasticsearch
+    enabled=yes
+    state=restarted
+  sudo: yes
+
+- name: Restart kibana
+  service:
+    name=kibana
+    enabled=yes
+    state=restarted
+  sudo: yes
+
+- name: Restart Nginx
+  service: 
+    name=nginx
+    enabled=yes
+    state=restarted
+  sudo: yes

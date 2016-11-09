@@ -1,0 +1,27 @@
+---
+# file: roles/common/tasks/main.yml
+
+- name: Include OS-specific variables.
+  include_vars: "{{ ansible_os_family }}.yml"
+
+- name: Set java_home
+  set_fact:
+    java_home: "{{java_home_prefix_path}}/{{java_home_jdk_name}}"
+  when: java_home_set_to_openjdk
+
+- name: Set java_home
+  set_fact:
+    java_home: "{{java_home_prefix_path}}/{{java_home_oracle_name}}"
+  when: not java_home_set_to_openjdk
+    
+# Setup/install tasks.
+- include: setup-RedHat.yml
+  when: ansible_os_family == 'RedHat'
+
+
+- include: setup-Debian.yml
+  when: ansible_os_family == 'Debian'
+
+- name: Set fact java_has_run
+  set_fact:
+    java_has_run: true

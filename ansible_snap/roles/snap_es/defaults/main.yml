@@ -6,35 +6,53 @@ hostname: "nokiasnap"
 #elastic search setup stuff  
 elasticsearch_user: elasticsearch
 elasticsearch_group: elasticsearch
-#elasticsearch_download_url: https://artifacts.elastic.co/downloads/elasticsearch
-elasticsearch_version: 2.4.1
-elasticsearch_download_url: https://download.elastic.co/elasticsearch/release/org/elasticsearch/distribution/tar/elasticsearch/{{elasticsearch_version}}
-elasticsearch_max_open_files: 65535
+elasticsearch_download_url: https://artifacts.elastic.co/downloads/elasticsearch
+elasticsearch_version: 5.0.0
+#elasticsearch_version: 2.4.1
+#elasticsearch_download_url: https://download.elastic.co/elasticsearch/release/org/elasticsearch/distribution/tar/elasticsearch/{{elasticsearch_version}}
+elasticsearch_max_open_files: 65536
 elasticsearch_home_dir_prefix: /opt
 elasticsearch_home_dir: "{{ elasticsearch_home_dir_prefix }}/elasticsearch"
 elasticsearch_plugin_dir: "{{ elasticsearch_home_dir }}/plugins"
 elasticsearch_conf_dir: /etc/elasticsearch
 elasticsearch_pid_dir: /var/run
-elasticsearch_timezone: "Etc/UTC"  # Default to UTC
+
 
 #elastic search config stuff
 elasticsearch_network_host: 0.0.0.0
 elasticsearch_http_port: 9200
 elasticsearch_heap_size: 4g
-elasticsearch_vm_swapiness: 0
+elasticsearch_vm_swapiness: 1
 
 elasticsearch_index_data: "/var/snap_data/es_data"
 elasticsearch_logs: "/var/snap_logs/es_logs"
 elasticsearch_tmp_files: "/tmp/es_tmp"
 elasticsearch_service_state: started
 
+elasticsearch_cluster_name: "SNAP"
+elasticsearch_is_master: "true"
+elasticsearch_is_data: "true"
+
+elasticsearch_memory_bootstrap_mlockall: "true"
+elasticsearch_max_locked_memory: "unlimited"
+
+elasticsearch_discovery_zen_minimum_master_nodes: 1
+elasticsearch_discovery_zen_ping_timeout: 30s
+elasticsearch_discovery_zen_ping_multicast_port: 54328
+elasticsearch_discovery_zen_ping_multicast_enabled: "false"
+
+elasticsearch_discovery_zen_fd_ping_interval: 1s
+elasticsearch_discovery_zen_fd_ping_timeout: 30s
+elasticsearch_discovery_zen_fd_ping_retries: 3
+
 
 # kibana config info
 kibana_user: kibana
 kibana_group: kibana
-#kibana_download_url: https://artifacts.elastic.co/downloads/kibana
-kibana_download_url: http://download.elastic.co/kibana/kibana
-kibana_version: 4.6.2
+kibana_download_url: https://artifacts.elastic.co/downloads/kibana
+#kibana_download_url: http://download.elastic.co/kibana/kibana
+#kibana_version: 4.6.2
+kibana_version: 5.0.0
 kibana_dir: "/opt"
 kibana_host: localhost
 kibana_port: "5601"

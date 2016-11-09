@@ -31,6 +31,6 @@
 
 - name: Java system environment configuration
   lineinfile:
-    dest=snap-setup-env.sh
+    dest=/opt/snap/setup.sh
     line="export JAVA_HOME={{ java_home }}"
   tags: java

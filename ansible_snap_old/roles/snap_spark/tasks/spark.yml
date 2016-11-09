@@ -1,0 +1,125 @@
+---
+- name: spark-setup | Configuring spark group
+  group:
+    name={{ spark_user }}
+
+- name: spark-setup | Configuring spark user
+  user:
+    name={{ spark_user }}
+    group={{ spark_group }}
+    createhome=no
+
+- name: spark-setup | Create service account for Spark
+  user: name={{ spark_user }}
+        system=yes
+        home={{ spark_lib_dir }}
+        shell={{ spark_user_shell }}
+        state=present
+        groups="{{ spark_group }}"
+  tags: ["spark-user"]
+    
+- name: spark-setup | Ensure Spark configuration directory exists
+  file: path="{{ spark_conf_dir }}"
+        state=directory
+  tags: ["config"]
+
+- name: spark-setup | Ensure Spark log and run directories exist
+  file: path="{{ item }}"
+        owner={{ spark_user }}
+        group={{ spark_group }}
+        mode=0755
+        state=directory
+  with_items:
+    - "{{ spark_log_dir }}"
+    - "{{ spark_run_dir }}"
+
+- name: spark-setup | Download Spark distribution
+  get_url: url="{{ spark_mirror }}/spark-{{ spark_version }}.tgz"
+           dest="{{ spark_src_dir }}/spark-{{ spark_version }}.tgz"
+
+- name: spark-setup | Extract Spark distribution
+  unarchive: src="{{ spark_src_dir }}/spark-{{ spark_version }}.tgz"
+             dest="{{ spark_usr_parent_dir }}"
+             copy=no
+             creates="{{ spark_usr_parent_dir }}/spark"
+
+- name: spark-setup | Setup Spark distribution symlinks
+  file: src="{{ item.src }}"
+        dest="{{ item.dest }}"
+        state=link
+  with_items:
+    - { src: "{{ spark_usr_parent_dir }}/spark-{{ spark_version }}", dest: "{{ spark_usr_dir }}" }
+    - { src: "{{ spark_usr_parent_dir }}/spark-{{ spark_version }}/conf", dest: "{{ spark_conf_dir }}/conf" }
+  tags: ["symlinks"]
+
+- name: spark-setup | Create shims for Spark binaries
+  template: src=spark-shim.j2
+            dest="/usr/bin/{{ item }}"
+            mode=0755
+  with_items:
+    - spark-class
+    - spark-shell
+    - spark-sql
+    - spark-submit
+  tags: ["shims"]
+
+- name:  spark-setup | Configure Spark environment
+  template: src=spark-env.sh.j2
+            dest="{{ spark_usr_parent_dir }}/spark-{{ spark_version }}/conf/spark-env.sh"
+  register: spark_config
+  tags: ["config"]
+
+- name: spark-setup | Configure Spark defaults config file
+  template: src=spark-defaults.conf.j2
+            dest="{{ spark_usr_parent_dir }}/spark-{{ spark_version }}/conf/spark-defaults.conf"
+  register: spark_config
+  tags: ["config"]
+
+#- name: spark-setup | restart spark to apply configuration changes
+#  set_fact: spark_config_changed={{ spark_config.changed or (spark_config_changed is defined and spark_config_changed) }}
+#  notify:
+#    - restart spark master
+#    - wait for spark master port
+#    - restart spark worker
+#    - wait for spark worker port
+#  changed_when: spark_config_changed
+#  tags: spark
+
+- include: spark-master.yml
+  when: spark_master_enabled
+  tags: spark
+
+- include: spark-worker.yml
+  when: spark_worker_enabled
+  tags: spark
+
+- name: spark-setup | reread supervisord
+  become: yes
+  shell: supervisorctl reread && supervisorctl update
+  tags: spark
+  
+- name: spark-setup | ensure spark-master
+  supervisorctl:
+    name:  spark-master
+    state: started
+  tags: spark
+  when: spark_master_enabled
+  
+- name: spark-setup | wait for spark master port
+  wait_for:
+    port: "{{ spark_master_webui_port }}"
+  tags: spark
+  when: spark_master_enabled
+
+- name: spark-setup | ensure spark-worker
+  supervisorctl:
+    name:  spark-worker
+    state: started
+  tags: spark
+  when: spark_worker_enabled
+  
+- name: spark-setup | wait for spark worker port
+  wait_for:
+    port: "{{ spark_worker_webui_port }}"
+  tags: spark
+  when: spark_worker_enabled
