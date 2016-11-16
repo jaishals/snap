@@ -65,7 +65,6 @@
      - "{{ elasticsearch_index_data }}"
      - "{{ elasticsearch_logs }}"
      - "{{ elasticsearch_tmp_files }}"
-     - "{{ elasticsearch_conf_dir }}"
 
 - name: elasticsearch-setup | Download elasticsearch
   get_url:
