@@ -28,6 +28,30 @@
      lineinfile:
        dest="{{conf_dir}}/setup.sh"
        line="#!bin/bash"
+
+   - name: Install common apt packages
+     apt: pkg={{ item }} state=latest
+     with_items:
+       - python-apt
+       - python-pip
+       - python-pycurl
+       - git-core
+       - nginx
+       - apache2-utils
+     sudo: yes
+     when: ansible_distribution == 'Ubuntu'
+
+   - name: Install common yum packages 
+     yum: name={{ item }} state=present
+     with_items:
+       - python-pip
+       - python-pycurl
+       - git
+       - nginx
+       - httpd
+       - httpd-tools
+     sudo: yes
+     when: ansible_distribution == 'CentOS'
   tags:
     - env-setup
  # --------------------------------- JAVA ------------------------------------------

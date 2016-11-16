@@ -91,6 +91,15 @@
   sudo: yes
   when: not installed_version.stat.exists
 
+- name: elasticsearch-setup | Ensure elastic config directories exists
+  file:
+    path="{{ elasticsearch_conf_dir }}"
+    state=directory
+    owner={{ elasticsearch_user }}
+    group={{ elasticsearch_group }}
+    recurse=yes
+    mode=0755
+     
   
 - name: elasticsearch-setup | delete temporary elasticsearch file
   file:
@@ -118,6 +127,15 @@
     mode=0755
   when: elasticsearch_conf_dir is defined
 
+- name: elasticsearch-setup | Configuring Elasticsearch elasticsearch.yml Node
+  template:
+    src=jvm.options.j2
+    dest={{ elasticsearch_conf_dir }}/jvm.options
+    owner={{ elasticsearch_user }}
+    group={{ elasticsearch_group }}
+    mode=0755
+  when: elasticsearch_conf_dir is defined
+  
 - name: elasticsearch-setup | Configuring Elasticsearch logging properties
   template:
     src=log4j2.properties.j2
@@ -178,7 +196,11 @@
   
 - name: elasticsearch-setup | Make sure Elasticsearch is running before proceeding.
   become: true
-  wait_for: port={{ elasticsearch_http_port }} delay=3 timeout=60
+  wait_for: 
+     host={{ elasticsearch_network_host }}
+     port={{ elasticsearch_http_port }}
+     delay=3
+     timeout=60
 
 #- name: elasticsearch-setup | check for existing head plugin
 #  stat:

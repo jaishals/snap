@@ -22,25 +22,14 @@
     dest=/etc/supervisord.conf
   tags: supervisord
 
-- name: supervisord setup | setup CentOS supervisord service script
+- name: supervisord setup | setup supervisord service script
   copy:
-    src=supervisord_centos
+    src="supervisord_{{ ansible_os_family }}"
     dest=/etc/init.d/supervisord
     owner=root
     group=root
     mode=0755
   tags: supervisord
-  when: ansible_os_family == "RedHat"
-
-- name: supervisord setup | setup Ubuntu supervisord service script
-  copy:
-    src=supervisord_ubuntu
-    dest=/etc/init.d/supervisord
-    owner=root
-    group=root
-    mode=0755
-  tags: supervisord
-  when: ansible_os_family == "Debian"
 
 - name: elasticsearch-setup | set ulimit on system
   become: true
@@ -52,7 +41,15 @@
     regexp: '^ulimit -l unlimited'
     insertafter: EOF
     line: 'ulimit -l unlimited'
-    
+
+- name: supervisord setup | stop supervisord if running
+  service:
+    name: supervisord
+    state: stopped
+  tags: supervisord
+  sudo: yes
+  ignore_errors: yes
+  
 - name: supervisord setup | ensure supervisord is running
   service:
     name: supervisord
