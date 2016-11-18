@@ -13,7 +13,10 @@
           "strings": {
             "match": "*",
             "match_mapping_type": "string",
-            "mapping": { "type": "string",  "doc_values": true, "index": "not_analyzed" }
+            "mapping": {
+              "type": "keyword",
+              "doc_values": true
+            }
           }
         }
       ]
@@ -21,10 +24,11 @@
     "statsdata": {
       "properties": {
         "TimeStamp": { "type": "date", "doc_values": true },
+        "Type": { "type": "keyword", "index": false },
         "Stats":  {
           "properties" : {
-            "kbps": { "type" : "long", "doc_values": true, "index":"no"},
-            "pps": { "type" :  "long", "doc_values":true, "index":"no"}
+            "kbps": { "type" : "long", "doc_values": true, "index": false},
+            "pps": { "type" :  "long", "doc_values":true, "index": false}
           }
         }
       }
